@@ -45,6 +45,9 @@ pub struct TagsOptions {
     #[options(help = "Limit the number of results", default = "30")]
     pub limit: usize,
 
+    #[options(help = "Show image digest")]
+    pub digest: bool,
+
     #[options(help = "Filter by architecture")]
     pub architecture: Option<String>,
 

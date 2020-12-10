@@ -45,4 +45,5 @@ pub struct Image {
     pub architecture: String,
     pub os: String,
     pub size: u64,
+    pub digest: Option<String>,
 }

@@ -32,9 +32,19 @@ struct Response {
 
 pub async fn run(options: TagsOptions) -> anyhow::Result<()> {
     macro_rules! row {
-        ($($values:tt)*) => {
-            println!("{:10} {:8.8} {:6.6} {:15} {}", $($values)*)
-        }
+        ($size:expr, $os:expr, $arch:expr, $push:expr, $digest:expr, $name:expr) => {
+            if options.digest {
+                println!(
+                    "{:10} {:8.8} {:6.6} {:14} {:73} {}",
+                    $size, $os, $arch, $push, $digest, $name
+                )
+            } else {
+                println!(
+                    "{:10} {:8.8} {:6.6} {:15} {}",
+                    $size, $os, $arch, $push, $name
+                )
+            }
+        };
     }
 
     let filter_os;
@@ -79,7 +89,7 @@ pub async fn run(options: TagsOptions) -> anyhow::Result<()> {
             if page == 1 {
                 println!("- {} results for {}", response.count, repository);
 
-                row!("SIZE", "OS", "ARCH", "LAST PUSHED", "NAME");
+                row!("SIZE", "OS", "ARCH", "LAST PUSHED", "DIGEST", "NAME");
             }
 
             if response.results.is_empty() {
@@ -112,6 +122,7 @@ pub async fn run(options: TagsOptions) -> anyhow::Result<()> {
                         image.os,
                         image.architecture,
                         last_updated,
+                        image.digest.as_deref().unwrap_or_default(),
                         result.name
                     );
                 }
