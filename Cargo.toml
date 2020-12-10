@@ -1,0 +1,9 @@
+[package]
+name = "hdcquery"
+version = "0.1.0"
+authors = [ "ayosec@gmail.com" ]
+edition = "2018"
+license = "Apache-2.0"
+description = "CLI tool to query data from hub.docker.com"
+repository = "https://github.com/ayosec/hdcquery"
+
