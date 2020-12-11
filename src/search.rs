@@ -224,6 +224,7 @@ fn search_apache_repository() {
     use std::process::Command;
 
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.env(crate::pager::PAGER_ENV, "cat");
     cmd.args(&["search", "apache"]);
     let mut cmd = spawn_command(cmd, Some(60_000)).unwrap();
 

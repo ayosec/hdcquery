@@ -1,4 +1,9 @@
 //! Implementation of the 'show' command
+//!
+//! The pager will receive the following environment variables:
+//!
+//! * `HDCQUERY_REPOSITORY`: name of the repository, like `"library/rust"`.
+//! * `HDCQUERY_VERSION`: version of hdcquery.
 
 use crate::hubapi::Repository;
 use crate::langext::DurationExt;
@@ -31,6 +36,12 @@ pub async fn show_repository_by_slug(slug: &str) -> anyhow::Result<()> {
 }
 
 pub async fn show_repository(repository: &Repository) -> anyhow::Result<()> {
+    let pager_cmd;
+    let mut pager_stdin;
+    let mut io_stdout;
+
+    let output: &mut dyn std::io::Write;
+
     macro_rules! option_field {
         ($field:ident, $label:literal) => {
             option_field!($field, $label, $field)
@@ -38,9 +49,27 @@ pub async fn show_repository(repository: &Repository) -> anyhow::Result<()> {
 
         ($field:ident, $label:literal, $render:expr) => {
             if let Some($field) = &repository.$field {
-                println!(concat!($label, ": {}"), $render)
+                writeln!(output, concat!($label, ": {}"), $render)?
             }
         };
+    }
+
+    let slug = match (&repository.namespace, &repository.name) {
+        (Some(ns), Some(n)) => Some(format!("{}/{}", ns, n)),
+        _ => None,
+    };
+
+    if let Some(mut cmd) = crate::pager::command(slug.as_deref()) {
+        let mut child = cmd.spawn()?;
+        pager_stdin = child.stdin.take();
+        pager_cmd = Some(child);
+
+        output = pager_stdin.as_mut().expect("stdin expected for pager");
+    } else {
+        pager_cmd = None;
+        pager_stdin = None;
+        io_stdout = std::io::stdout();
+        output = &mut io_stdout;
     }
 
     option_field!(namespace, "Namespace");
@@ -56,16 +85,21 @@ pub async fn show_repository(repository: &Repository) -> anyhow::Result<()> {
     );
 
     if let Some(last_updated) = &repository.last_updated {
-        println!(
+        writeln!(
+            output,
             "Last updated: {} ({})",
             last_updated.format("%F %R %Z"),
             last_updated.to_human()
-        );
+        )?;
     }
 
     if let Some(full_description) = &repository.full_description {
-        println!("\n----\n\n{}\n\n----", full_description);
+        writeln!(output, "\n----\n\n{}\n\n----", full_description)?;
     }
+
+    // Close the pager's input
+    drop(pager_stdin);
+    let _ = pager_cmd.map(|mut c| c.wait());
 
     Ok(())
 }

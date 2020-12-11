@@ -3,6 +3,7 @@ use gumdrop::Options;
 mod hubapi;
 mod langext;
 mod options;
+mod pager;
 mod search;
 mod show;
 mod tags;
