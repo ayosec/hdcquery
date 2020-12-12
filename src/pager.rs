@@ -13,10 +13,15 @@ pub fn command(repository: Option<&str>) -> Option<Command> {
     }
 
     let pager_var = env::var(PAGER_ENV);
-    let mut pager_args = pager_var
-        .as_deref()
-        .unwrap_or(DEFAULT_PAGER)
-        .split_whitespace();
+    let pager_args = pager_var.as_deref().unwrap_or(DEFAULT_PAGER);
+
+    let mut pager_args = match shell_words::split(pager_args) {
+        Ok(words) => words.into_iter(),
+        Err(e) => {
+            eprintln!("Failed to parse $HDC_PAGER: {:?}", e);
+            return None;
+        }
+    };
 
     let mut cmd = Command::new(pager_args.next()?);
 
